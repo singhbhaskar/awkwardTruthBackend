@@ -2,6 +2,7 @@ var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var qs = require('./questionair.js');
+var crypto = require('crypto');
 
 app.set('view engine','ejs')
 
@@ -23,6 +24,7 @@ let score = [];
 let readyList = [];
 let readyCount = 0;
 let gameQues = qs.questions;
+let roundId = "";
 
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
@@ -70,7 +72,10 @@ io.on('connection', function (socket) {
         readyList.push({name: el, status: false})
     })
     if(socket.username == 'bhaskar')
-        io.emit('started', {msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
+        var current_date = (new Date()).valueOf().toString();
+        var random = Math.random().toString();
+        roundId = crypto.createHash('sha1').update(current_date + random).digest('hex');
+        io.emit('started', {roundId: roundId ,msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
   });
 
   socket.on('ansSubmit', (ans) => {
@@ -85,14 +90,14 @@ io.on('connection', function (socket) {
     replyAnswersTemp.push(ans)
     if(replyCount < players.length){
         console.log("in wait area");
-        socket.emit('waitArea' , "you have submitted wait for others answers");
+        socket.emit('waitArea' , {roundId: roundId, msg: "you have submitted wait for others answers"});
     }
     if(replyCount == players.length){
         console.log("in all answered area");
         let tmp = replyAnswersTemp;
         replyCount = 0;
         tmp = shuffle(tmp)
-        io.emit('allAnswered', tmp);
+        io.emit('allAnswered', {roundId: roundId, tmp: tmp});
     }
   });
 
@@ -117,7 +122,7 @@ io.on('connection', function (socket) {
     if(replyCount < players.length){
         console.log("in wait area");
         replyAnswersTemp = [];
-        socket.emit('waitArea' , "you have submitted wait for others answers");
+        socket.emit('waitArea' , {roundId: roundId, msg: "you have submitted wait for others answers"});
     }
     if(replyCount == players.length){
         console.log(replyAnswers, replyAnswersFinal);
@@ -133,7 +138,7 @@ io.on('connection', function (socket) {
         replyAnswers = [];
         let psy = psych;
         pysch = [];
-        io.emit('allAnsweredFinal', {psychList: psy, scorebd: score});
+        io.emit('allAnsweredFinal', {roundId: roundId, psychList: psy, scorebd: score});
     }
   });
 
@@ -154,7 +159,10 @@ io.on('connection', function (socket) {
         players.forEach(el => {
             readyList.push({name: el, status: false})
         });
-        io.emit('startRound', {ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
+        var current_date = (new Date()).valueOf().toString();
+        var random = Math.random().toString();
+        roundId = crypto.createHash('sha1').update(current_date + random).digest('hex');
+        io.emit('startRound', {roundId: roundId, ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
     }
   });
 

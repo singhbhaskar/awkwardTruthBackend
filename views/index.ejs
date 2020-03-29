@@ -64,6 +64,7 @@
     <script>
     var socket = io.connect('/');
     let ownAns = '';
+    let roundId = '';
     //events
     $("#start").click(() => {
         socket.emit('start' , 'start');
@@ -106,6 +107,7 @@
     });
 
     socket.on('started', (msg) => {
+        roundId = msg.roundId;
         $('#readyList').html('');
         $('#victim').html('');
         $("#lobby").css("display","none");
@@ -113,44 +115,65 @@
         alert(msg.msg);
         $("#qna").css("display","block");
         $('#ques').html(msg.ques)
+
     });
 
     socket.on('waitArea', (msg) => {
-        console.log("wait kara")
-        $('#waiting').css("display","block");
-        $('#waiting').html(msg);
+        if(msg.roundId == roundId){
+            console.log("wait kara")
+            $('#waiting').css("display","block");
+            $('#waiting').html(msg.msg);
+        }
+        else{
+            $('#waiting').css("display","block");
+            $('#waiting').html("You are out of SYNC ask you friends to restart the game! Mafhi from game's side");
+        }
     })
 
     socket.on('allAnswered', (msg) => {
-        console.log("cheers all answered");
-        $('#waiting').css("display","none");
-        $('#options').css("display","block");
-        $('#optionAnswers').html('')
-        msg.forEach(el => {
-            if(el != ownAns)
-                $('#optionAnswers').append(new Option(el, el));
-        })
+        if(msg.roundId == roundId){
+            console.log("cheers all answered");
+            $('#waiting').css("display","none");
+            $('#options').css("display","block");
+            $('#optionAnswers').html('')
+            msg.tmp.forEach(el => {
+                if(el != ownAns)
+                    $('#optionAnswers').append(new Option(el, el));
+            })
+        }
+        else{
+            $('#waiting').css("display","block");
+            $('#waiting').html("You are out of SYNC ask you friends to restart the game! Mafhi from game's side");
+        }
+
     });
 
     socket.on('allAnsweredFinal', (msg) => {
-        console.log("cheers all answered final");
-        $('#waiting').css("display","none");
-        $('#pysch').css("display","block");
-        $('#victim').append($('<li>').html("You Psyched these guys:")); 
-        msg.psychList.forEach(el => {
-            if(el.victim == username){
-                $('#pyschText').html("You have been PSYCHED BY: " + el.pysche);
-            }
-            if(el.pysche == username){
-                $('#victim').append($('<li>').addClass("list-group-item list-group-item-success").html(el.victim));
-            }
-        })
-        $('#ready').prop('disabled', false);
-        console.log(msg.scorebd);
-        $('#scorebd').html('');
-        msg.scorebd.forEach(el => {
-            $('#scorebd').append($('<li>').addClass("list-group-item").html(el.name + " has " + el.point + " points "));
-        });
+        if(msg.roundId == roundId){
+            console.log("cheers all answered final");
+            $('#waiting').css("display","none");
+            $('#pysch').css("display","block");
+            $('#victim').append($('<li>').html("You Psyched these guys:")); 
+            msg.psychList.forEach(el => {
+                if(el.victim == username){
+                    $('#pyschText').html("You have been PSYCHED BY: " + el.pysche);
+                }
+                if(el.pysche == username){
+                    $('#victim').append($('<li>').addClass("list-group-item list-group-item-success").html(el.victim));
+                }
+            })
+            $('#ready').prop('disabled', false);
+            console.log(msg.scorebd);
+            $('#scorebd').html('');
+            msg.scorebd.forEach(el => {
+                $('#scorebd').append($('<li>').addClass("list-group-item").html(el.name + " has " + el.point + " points "));
+            });
+        }
+        else{
+            $('#waiting').css("display","none");
+            $('#pyschText').css("display","block");
+            $('#pyschText').html("You are out of SYNC ask you friends to restart the game! Mafhi from game's side");
+        }
         // $('#pyschText').html("THIS IS PYSCH TEXT");
     });
 
@@ -168,6 +191,7 @@
     });
 
     socket.on('startRound', (msg) => {
+        roundId = msg.roundId;
         $('#readyList').css("display","none");
         $('#readyList').html('');
         $('#victim').html('');
