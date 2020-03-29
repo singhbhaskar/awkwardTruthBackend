@@ -42,7 +42,11 @@
 
     <div id="pysch" style="display: none">
         <h1 id="pyschText"></h1>
+        <br>
         <ul id="scorebd"></ul>
+        <br>
+        <ul id="victim" class="list-group"></ul>
+        <br>
         <button id="ready" class="btn btn-primary btn-lg btn-block">READY</button>
         <br>
         <ul id="readyList" class="list-group">
@@ -102,6 +106,8 @@
     });
 
     socket.on('started', (msg) => {
+        $('#readyList').html('');
+        $('#victim').html('');
         $("#lobby").css("display","none");
         $('#player').html('');
         alert(msg.msg);
@@ -129,17 +135,21 @@
     socket.on('allAnsweredFinal', (msg) => {
         console.log("cheers all answered final");
         $('#waiting').css("display","none");
-        $('#pysch').css("display","block"); 
+        $('#pysch').css("display","block");
+        $('#victim').append($('<li>').html("You Psyched these guys:")); 
         msg.psychList.forEach(el => {
             if(el.victim == username){
                 $('#pyschText').html("You have been PSYCHED BY: " + el.pysche);
+            }
+            if(el.pysche == username){
+                $('#victim').append($('<li>').addClass("list-group-item list-group-item-success").html(el.victim));
             }
         })
         $('#ready').prop('disabled', false);
         console.log(msg.scorebd);
         $('#scorebd').html('');
         msg.scorebd.forEach(el => {
-            $('#scorebd').append($('<li>').html(el.name + " has " + el.point + " points "));
+            $('#scorebd').append($('<li>').addClass("list-group-item").html(el.name + " has " + el.point + " points "));
         });
         // $('#pyschText').html("THIS IS PYSCH TEXT");
     });
@@ -160,6 +170,7 @@
     socket.on('startRound', (msg) => {
         $('#readyList').css("display","none");
         $('#readyList').html('');
+        $('#victim').html('');
         $("#qna").css("display","block");
         $('#pysch').css("display","none");
         $('#ques').html(msg.ques)
