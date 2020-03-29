@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ghatiya Baatye</title>
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="container-fluid align-middle" >
+
+    <div id="lobby">
+        <h1 class="mx-auto">Welcome to Ghatiya Baatye!</h1>
+        <ul id="player" class="list-group">
+
+        </ul>
+        <br>
+        <button id="start" class="btn btn-primary btn-lg btn-block">START</button>
+    </div>
+
+    <form method="POST" action="#" id="qna" style="display: none">
+        <h3 id="ques"></h3>
+        <div class="input-group input-group-lg">
+            <input type="text" name="ans" id="ans" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-lg">
+        </div>
+        <br>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Submit</button>
+    </form>
+
+    <h2 id="waiting" style="display: none"></h2>
+
+    <form action="#" method="post" style="display: none" id="options">
+        <h3>Choose your answers</h3>
+        <select id="optionAnswers" class="custom-select bg-success">
+        </select>
+        <br>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Submit</button>
+    </form>
+
+    <div id="pysch" style="display: none">
+        <h1 id="pyschText"></h1>
+        <ul id="scorebd"></ul>
+        <button id="ready" class="btn btn-primary btn-lg btn-block">READY</button>
+        <br>
+        <ul id="readyList" class="list-group">
+
+        </ul>
+    </div>
+
+    
+
+    <!-- Socket io client -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- JQuery -->
+    <!-- <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script> -->
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script>
+    var socket = io.connect('/');
+    let ownAns = '';
+    //events
+    $("#start").click(() => {
+        socket.emit('start' , 'start');
+    });
+
+    $("#ready").click(() => {
+        $('#ready').prop('disabled', true);
+        socket.emit('ready', username);
+    });
+
+    $('#qna').submit(function(e){
+        e.preventDefault(); // prevents page reloading
+        ownAns = $('#ans').val()
+        socket.emit('ansSubmit', $('#ans').val());
+        $("#qna").css("display","none");
+        $('#ans').val('');
+        return false;
+    });
+
+    $('#options').submit(function(e){
+        e.preventDefault(); // prevents page reloading
+        socket.emit('ansSubmitFinal', $('#optionAnswers').val());
+        $("#options").css("display","none");
+        $('#optionAnswers').val('');
+        $('#optionAnswers').html('');
+        return false;
+    });
+
+    // catchers of emit
+    socket.on('news', function (data) {
+        console.log(data);
+        socket.emit('my other event', { my: data });
+    });
+
+    socket.on('playerAdded', function(players){
+        $('#player').html('');
+        players.forEach(el => {
+            $('#player').append($('<li>').addClass("list-group-item list-group-item-success").html(el));
+        });
+    });
+
+    socket.on('started', (msg) => {
+        $("#lobby").css("display","none");
+        $('#player').html('');
+        alert(msg.msg);
+        $("#qna").css("display","block");
+        $('#ques').html(msg.ques)
+    });
+
+    socket.on('waitArea', (msg) => {
+        console.log("wait kara")
+        $('#waiting').css("display","block");
+        $('#waiting').html(msg);
+    })
+
+    socket.on('allAnswered', (msg) => {
+        console.log("cheers all answered");
+        $('#waiting').css("display","none");
+        $('#options').css("display","block");
+        $('#optionAnswers').html('')
+        msg.forEach(el => {
+            if(el != ownAns)
+                $('#optionAnswers').append(new Option(el, el));
+        })
+    });
+
+    socket.on('allAnsweredFinal', (msg) => {
+        console.log("cheers all answered final");
+        $('#waiting').css("display","none");
+        $('#pysch').css("display","block"); 
+        msg.psychList.forEach(el => {
+            if(el.victim == username){
+                $('#pyschText').html("You have been PSYCHED BY: " + el.pysche);
+            }
+        })
+        $('#ready').prop('disabled', false);
+        console.log(msg.scorebd);
+        $('#scorebd').html('');
+        msg.scorebd.forEach(el => {
+            $('#scorebd').append($('<li>').html(el.name + " has " + el.point + " points "));
+        });
+        // $('#pyschText').html("THIS IS PYSCH TEXT");
+    });
+
+    socket.on('readyWait', (msg) => {
+        
+        $('#readyList').css("display","block");
+        console.log(msg);
+        $('#readyList').html('');
+        msg.forEach(el => {
+            if(el.status)
+                $('#readyList').append($('<li>').addClass("list-group-item list-group-item-success").html(el.name));
+            else
+            $('#readyList').append($('<li>').addClass("list-group-item list-group-item-danger").html(el.name));
+        })
+    });
+
+    socket.on('startRound', (msg) => {
+        $('#readyList').css("display","none");
+        $('#readyList').html('');
+        $("#qna").css("display","block");
+        $('#pysch').css("display","none");
+        $('#ques').html(msg.ques)
+    });
+
+    //always last line
+    var username = prompt('Please tell me your name');
+    socket.emit('username', username);
+    
+    </script>
+</body>
+</html>

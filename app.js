@@ -1,6 +1,9 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var qs = require('./questionair.js');
+
+app.set('view engine','ejs')
 
 server.listen(8080);
 // WARNING: app.listen(80) will NOT work here!
@@ -18,6 +21,7 @@ let psych = [];
 let score = [];
 let readyList = [];
 let readyCount = 0;
+let gameQues = qs.questions;
 
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
@@ -39,7 +43,7 @@ function shuffle(array) {
   }
 
 app.get('/', function (req, res) {
-    res.send("this works");
+    res.render('index');
 });
 
 io.on('connection', function (socket) {
@@ -64,7 +68,7 @@ io.on('connection', function (socket) {
         score.push({name: el, point: 0});
         readyList.push({name: el, status: false})
     })
-    io.emit('started', {msg: "matchStarted", ques: "how many plannets are there is solar system?"});
+    io.emit('started', {msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
   });
 
   socket.on('ansSubmit', (ans) => {
@@ -132,20 +136,23 @@ io.on('connection', function (socket) {
   });
 
   socket.on('ready', (user) => {
-    replyCount = 0;
+    // replyCount = 0;
     
-    if(readyList.length == players.length) readyList = []
+    // if(readyList.length == players.length) readyList = []
     readyList.forEach((el, i) => {
         if(el.name == socket.username) readyList[i].status = true;
     })
     readyCount += 1;
     if(readyCount < players.length){
-        socket.emit('readyWait', "waiting for other players to be ready");
+        io.emit('readyWait', readyList);
     }
     if(readyCount == players.length){
         readyList = [];
         readyCount = 0;
-        io.emit('startRound', {ques: "????"});
+        players.forEach(el => {
+            readyList.push({name: el, status: false})
+        });
+        io.emit('startRound', {ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
     }
   });
 
