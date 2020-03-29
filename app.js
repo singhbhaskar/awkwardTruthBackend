@@ -69,7 +69,8 @@ io.on('connection', function (socket) {
         score.push({name: el, point: 0});
         readyList.push({name: el, status: false})
     })
-    io.emit('started', {msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
+    if(socket.username == 'bhaskar')
+        io.emit('started', {msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
   });
 
   socket.on('ansSubmit', (ans) => {
