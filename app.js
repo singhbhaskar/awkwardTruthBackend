@@ -5,10 +5,11 @@ var qs = require('./questionair.js');
 
 app.set('view engine','ejs')
 
-server.listen(8080);
+const port = parseInt(process.argv[2]) || 8080;
+server.listen(port);
 // WARNING: app.listen(80) will NOT work here!
 
-console.log("Server listening to port 8080");
+console.log("Server listening to port " + port);
 
 //meta-data
 let playerCount = 0; 
