@@ -5,7 +5,7 @@ var qs = require('./questionair.js');
 
 app.set('view engine','ejs')
 
-const port = parseInt(process.argv[2]) || 8080;
+const port = process.env.PORT || 3000;
 server.listen(port);
 // WARNING: app.listen(80) will NOT work here!
 
