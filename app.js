@@ -71,12 +71,13 @@ io.on('connection', function (socket) {
         score.push({name: el, point: 0});
         readyList.push({name: el, status: false})
     })
-    if(socket.username == 'bhaskar')
+    if(socket.username == 'bhaskar'){
         var current_date = (new Date()).valueOf().toString();
         var random = Math.random().toString();
         roundId = crypto.createHash('sha1').update(current_date + random).digest('hex');
         io.emit('started', {roundId: roundId ,msg: "matchStarted", ques: gameQues[Math.floor(Math.random() * gameQues.length)] + " Answer as if you are: " + players[Math.floor(Math.random() * players.length)]});
-  });
+        }
+    });
 
   socket.on('ansSubmit', (ans) => {
     replyCount += 1;
